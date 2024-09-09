@@ -41,7 +41,7 @@ Or you can make a list containing the functions
 -}
 
 funs :: [Int -> Int]
-funs = undefined
+funs = [plus1, minus1]
 
 {-
 Taking Functions as Input
@@ -169,12 +169,14 @@ Note the types of the above are `Int -> Int`.  That is, `plus10` and
 -}
 
 -- >>> plus10 3
+-- 13
 
 {-
 
 -}
 
 -- >>> plusn 10 3
+-- 13
 
 {-
 Partial Application
@@ -206,7 +208,7 @@ is equivalent to
 That is, the first type (a function which takes two Ints) is in reality a
 function that takes a single Int as input, and returns as *output* a function
 from `Int` to `Int`! Equipped with this knowledge, consider the function
--}
+-} -- ?????
 
 plus :: Int -> Int -> Int
 plus m n = m + n
@@ -261,7 +263,8 @@ arguments before substituting them into the body of a defined function.
                     == (plus 20) ((plus 20) 0)
 -}
 
---            ... undefined (fill this part in) ...
+--            == plus 20 (plus 20 0)        {- unfold plus -}
+--            == plus 20 20                 {- unfold plus -}
 
 {-
                     == 20 + 20 + 0
@@ -278,12 +281,18 @@ to a particular `Int` (don't bother trying to figure out what it does):
 twoArg :: Int -> String -> Bool
 twoArg i s = length (s ++ show i) >= 2
 
+{-show i: converts integer i to string i-}
+
 {-
 thus
 -}
 
 oneStringArg :: String -> Bool
 oneStringArg = twoArg 3
+
+{-
+oneStringArg "a" == twoArg 3 "a"
+-}
 
 {-
 However, if we wanted to specialize it to a particular `String`, then it is a
@@ -293,6 +302,10 @@ out its type in ghci!) to swap the order of the arguments.
 
 oneIntArg :: Int -> Bool
 oneIntArg = flip twoArg "a"
+
+{-
+oneIntArg 3 == flip twoArg "a" 3 == twoArg 3 "a"
+-}
 
 {-
 Another solution relies on anonymous functions. (See if you can figure it
@@ -426,7 +439,7 @@ following test passes.
 -}
 
 singleton :: a -> [a]
-singleton = undefined
+singleton = (: [])
 
 -- >>> singleton True
 -- [True]
@@ -487,11 +500,18 @@ Ok, to make sure you're following, can you figure out what this does?
 ex1 :: (a -> a) -> a -> a
 ex1 f y = doTwice doTwice f y
 
+ex1' :: (a -> a) -> a -> a
+ex1' f y = f (f (f (f y)))
+
 {-
 Hint: what does this evaluate to?
 -}
 
 -- >>> ex1 (+1) 1
+-- 5
+
+-- >>> ex1' (+1) 1
+-- 5
 
 {-
 Polymorphic Data Structures
@@ -667,7 +687,7 @@ toUpperString' :: String -> String
 toUpperString' xs = map toUpper xs
 
 shiftPoly' :: XY -> Polygon -> Polygon
-shiftPoly' d = undefined
+shiftPoly' d = map (shiftXY d)
 
 {-
 Much better.  But let's make sure our refactoring didn't break anything!
@@ -711,7 +731,8 @@ We can write this more cleanly with map, of course:
 -}
 
 listIncr' :: [Int] -> [Int]
-listIncr' = undefined
+listIncr' = map (+ 1) --don't need an argument at the left side because map takes 2 arguments
+-- map (\x -> x + 1)
 
 {-
 Computation Pattern: Folding
@@ -794,7 +815,7 @@ from our list-length function?
 -}
 
 len' :: [a] -> Int
-len' = undefined
+len' = foldr (\_ n -> 1 + n) 0
 
 {-
 Once you have defined `len` in this way, see if you can trace how it
@@ -814,7 +835,7 @@ factorial 0 = 1
 factorial n = n * factorial (n - 1)
 
 factorial' :: Int -> Int
-factorial' n = undefined
+factorial' n = foldr (*) 1 [1..n]
 
 {-
 OK, one more.  The standard list library function `filter` has this
@@ -822,6 +843,11 @@ type:
 -}
 
 filter :: (a -> Bool) -> [a] -> [a]
+filter f [] = []
+filter f (x : xs) = if f x 
+                        then x : filter f xs 
+                        else filter f xs
+                        
 {-
 The idea is that the output list should contain only the elements
 of the first list for which the input function returns `True`.
@@ -839,7 +865,9 @@ So:
 Can we implement filter using foldr?  Sure!
 -}
 
-filter pred = undefined
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' pred = foldr (\x xs -> if pred x then x : xs else xs) []
+-- have to use foldr and not map because the result might have less number of elements in the list
 
 {-
 Which is more readable? HOFs or Recursion
