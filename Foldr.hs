@@ -108,7 +108,7 @@ Now implement using foldr
 -- >>> all (>0) ([1 .. 20] :: [Int])
 -- True
 all :: (a -> Bool) -> [a] -> Bool
-all p = undefined
+all p = foldr (\x y -> p x && y) True
 
 {-
 And trace through an evaluation `all not [True,False]`:
@@ -138,7 +138,19 @@ Now implement using foldr
 -- >>> last ""
 -- Nothing
 last :: [a] -> Maybe a
-last = undefined
+last = foldr (\x y ->
+  case y of
+    Nothing -> Just x
+    _ -> y) Nothing
+
+-- last (1 : 2 : [])
+--  = foldr g b (1 : 2 : [])
+--   = g 1 (foldr g b (2 : [])) 
+--   = g 1 (g 2 (foldr g b []))
+--   = g 1 (g 2 (case [] of Nothing -> Just 2; Just y -> Just y))
+--   = g 1 (g 2 (Just 2))
+--   = g 1 (case Just 2 of Nothing -> Just 1; Just y -> Just y)
+--   = Just 2
 
 {-
 and trace through the evaluation `last [1,2]`
@@ -152,11 +164,13 @@ of the first list for which the input function returns `True`.
 -}
 
 filter :: (a -> Bool) -> [a] -> [a]
-filter p = undefined
+filter p = foldr (\x y -> if p x then x : y else y) []
 
 -- >>> filter (> 10) [1 .. 20]
+-- [11,12,13,14,15,16,17,18,19,20]
 
--- >>> filter (\l -> sum l <= 42) [10,20], [50,50], [1..5] ]
+-- >>> filter (\l -> sum l <= 42) [ [10,20], [50,50], [1..5] ]
+-- [[10,20],[1,2,3,4,5]]
 
 {-
 Trace the evaluation of `filter (>2) [2,3]`
@@ -182,7 +196,9 @@ Now rewrite this function using 'foldr'
 -}
 
 reverse :: [a] -> [a]
-reverse l = undefined
+reverse l = aux l []
+  where
+    aux = foldr (\ x r ys -> r (x : ys)) id
 
 -- >>> reverse "abcd"
 -- "dcba"
@@ -221,7 +237,10 @@ Now rewrite using 'foldr'
 -}
 
 intersperse :: a -> [a] -> [a]
-intersperse = undefined
+intersperse a = foldr (\x y ->
+  case y of
+    [] -> [x]
+    _ -> x : a : y) []
 
 -- >>> intersperse ',' "abcde"
 -- "a,b,c,d,e"
@@ -263,7 +282,7 @@ But, you can also define `foldl` in terms of `foldr`. Give it a try.
 -}
 
 foldl :: (b -> a -> b) -> b -> [a] -> b
-foldl f z xs = undefined
+foldl f z xs = foldr (\x r acc -> r (f acc x)) id xs z
 
 -- >>> foldl (++) "x" ["1", "2", "3"]
 -- "x123"
